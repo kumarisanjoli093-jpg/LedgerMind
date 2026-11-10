@@ -1,8 +1,14 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
+from backend.api_transactions import router as transactions_router
+from backend.api_chat import router as chat_router
+from backend.db import init_db as init_ledgermind_db
 import sqlite3, csv, io, json, random, re, os
 from datetime import date, timedelta
 from difflib import SequenceMatcher
@@ -13,6 +19,8 @@ from gst_engine.reports import generate_gst_summary_report
 BASE=Path(__file__).parent
 DB=BASE/'gst_agent.db'
 app=FastAPI(title='LedgerMind GST Agent', version='2.0.0')
+app.include_router(transactions_router)
+app.include_router(chat_router)
 app.mount('/static',StaticFiles(directory=BASE/'static'),name='static')
 templates=Jinja2Templates(directory=BASE/'templates')
 
@@ -87,7 +95,9 @@ def analyze(month=None):
     c.close(); return rows
 
 @app.on_event('startup')
-def startup(): init_db()
+def startup():
+    init_db()
+    init_ledgermind_db()
 
 @app.get('/',response_class=HTMLResponse)
 def home(request:Request): return templates.TemplateResponse('index.html',{'request':request})
