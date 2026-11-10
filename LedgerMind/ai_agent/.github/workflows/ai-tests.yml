@@ -1,1 +1,35 @@
 
+name: LedgerMind AI Tests
+
+on:
+  push:
+    branches:
+      - ai-agent
+  pull_request:
+    branches:
+      - ai-agent
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          cd LedgerMind
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run AI agent tests
+        run: |
+          cd LedgerMind
+          PYTHONPATH=. pytest ai_agent/test_ai_agent.py -v
+
