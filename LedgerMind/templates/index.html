@@ -1,12 +1,657 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LedgerMind — GST Agent</title><link rel="stylesheet" href="/static/style.css"></head><body>
-<div class="shell"><aside class="sidebar"><div class="brand"><div class="logo">L</div><div><b>LedgerMind</b><small>GST INTELLIGENCE</small></div></div><div class="workspace"><span class="dot"></span> Demo workspace <span class="chev">⌄</span></div><div class="navlabel">WORKSPACE</div><button class="nav active" data-tab="overview">▦ <span>Overview</span></button><button class="nav" data-tab="exceptions">⚑ <span>Reconciliation</span><i id="navCount">0</i></button><button class="nav" data-tab="vendors">♙ <span>Vendor memory</span></button><button class="nav" data-tab="actions">↗ <span>Action drafts</span></button><div class="sidebottom"><div class="statusbox"><div class="statusline"><span class="pulse"></span> Agent operational</div><small>Local demo data · auto-refresh</small></div><div class="user"><div class="avatar">FM</div><div><b>Finance Manager</b><small>Administrator</small></div><span>•••</span></div></div></aside>
-<main class="main"><header><div><div class="eyebrow">FINANCE WORKSPACE / GST</div><h1 id="pageTitle">Overview</h1><p id="pageSub">Your reconciliation command centre.</p></div><div class="header-actions"><span class="live"><span class="pulse"></span> LIVE</span><button class="btn ghost" onclick="refresh()">↻ Refresh</button><button class="btn primary" onclick="runAgent()">✦ Run agent</button></div></header>
-<section id="overview" class="tabview"><div class="banner"><div class="banner-icon">✦</div><div><b>Hindsight is your advantage.</b><p>The agent learns vendor behaviour across filing cycles, remembers what worked, and helps prevent repeat credit-risk issues.</p></div><span class="banner-tag">MEMORY ENABLED</span></div>
-<div class="metrics"><article class="metric"><div class="metric-top">PURCHASE INVOICES <span>▤</span></div><strong id="mInvoices">—</strong><small>Across 6 sample filing periods</small></article><article class="metric"><div class="metric-top">VENDORS TRACKED <span>♙</span></div><strong id="mVendors">—</strong><small>Vendor behaviour profiles retained</small></article><article class="metric risk"><div class="metric-top">CREDIT AT RISK <span>₹</span></div><strong id="mRisk">—</strong><small>Estimated tax amount in open exceptions</small></article><article class="metric"><div class="metric-top">OPEN EXCEPTIONS <span>⚑</span></div><strong id="mIssues">—</strong><small><em id="mHigh">—</em> high-priority items</small></article></div>
-<div class="panel"><div class="panel-head"><div><h3>Hackathon technology connections</h3><p>Live configuration status for the required and recommended tools.</p></div><button class="textbtn" onclick="loadIntegrations()">Check connections ↻</button></div><div id="integrationStatus" class="activity">Checking integrations…</div><p class="subtle">Band AI is a required desktop application and must be installed/launched separately. OpenClaw is optional.</p></div><div class="grid2"><section class="panel"><div class="panel-head"><div><h3>Credit at risk over time</h3><p>Estimated tax value of unresolved exceptions</p></div><span class="subtle">6 MONTHS</span></div><div id="chart" class="chart"></div></section><section class="panel"><div class="panel-head"><div><h3>Agent activity</h3><p>Latest actions and system events</p></div><span class="subtle">RECENT</span></div><div id="activity" class="activity"></div></section></div>
-<div class="panel"><div class="panel-head"><div><h3>Priority exceptions</h3><p>Issues ranked by estimated tax credit exposure</p></div><button class="textbtn" onclick="showTab('exceptions')">View all →</button></div><div id="topIssues"></div></div>
-</section>
-<section id="exceptions" class="tabview hidden"><div class="toolbar"><div><h3>Reconciliation exceptions</h3><p>Purchase register compared with supplier-filed GSTR-2B export.</p></div><select id="monthFilter" onchange="loadIssues()"><option value="">All periods</option></select></div><div class="uploadrow"><div><b>Import your data</b><small>Upload CSV exports. Required columns: month, vendor, gstin, invoice, invoice_date, taxable, tax.</small></div><label class="uploadbtn">↑ Purchase register<input type="file" accept=".csv" onchange="uploadFile('purchase',this.files[0])"></label><label class="uploadbtn">↑ GSTR-2B CSV<input type="file" accept=".csv" onchange="uploadFile('gstr2b',this.files[0])"></label><a class="download" href="/api/sample/purchase">Sample CSV ↓</a></div><div class="tablewrap" id="issueTable"></div></section>
-<section id="vendors" class="tabview hidden"><div class="toolbar"><div><h3>Vendor memory</h3><p>Patterns the agent has retained from previous reconciliation cycles.</p></div><span class="memory-pill">✦ Persistent memory</span></div><div class="tablewrap" id="vendorTable"></div></section>
-<section id="actions" class="tabview hidden"><div class="toolbar"><div><h3>Action drafts</h3><p>Vendor-specific follow-ups prepared by the agent. Review before sending.</p></div><button class="btn primary" onclick="runAgent()">✦ Generate drafts</button></div><div id="actionList" class="drafts"></div></section>
-<footer>LedgerMind GST Agent <span>Demo environment · Synthetic data · No GST portal connection</span></footer></main></div><div id="toast" class="toast"></div><script src="/static/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LedgerMind — AI GST & Finance Intelligence</title>
+  <link rel="stylesheet" href="/static/style.css?v=4">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23163D32'/><text x='16' y='22' font-family='sans-serif' font-size='18' font-weight='800' fill='%23F5F0E8' text-anchor='middle'>L</text></svg>">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- shadcn/ui Inspired Collapsible Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <a href="#" class="brand-row" onclick="showTab('overview'); return false;">
+        <div class="brand-icon">L</div>
+        <div class="brand-info">
+          <span class="brand-name">LedgerMind</span>
+          <span class="brand-tag">GST Intelligence</span>
+        </div>
+      </a>
+
+      <!-- Workspace Switcher Pill -->
+      <div class="workspace-card" title="Active Organization Workspace">
+        <div class="workspace-left">
+          <span class="status-dot-pulse"></span>
+          <div>
+            <div class="workspace-title">Demo Workspace</div>
+            <div class="workspace-sub">6 Filing Cycles · Live</div>
+          </div>
+        </div>
+        <svg class="workspace-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+
+    <!-- Navigation List -->
+    <div class="sidebar-content">
+      <div class="nav-group">
+        <div class="nav-group-label">Core Platform</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button class="nav-button active" data-tab="overview">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              <span class="nav-text">Overview</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-button" data-tab="exceptions">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+              <span class="nav-text">Reconciliation</span>
+              <span class="nav-badge" id="navCount">0</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-button" data-tab="gstcalc">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+              <span class="nav-text">GST Calculator</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Intelligence & Memory</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button class="nav-button" data-tab="vendors">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="nav-text">Vendor Memory</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-button" data-tab="actions">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" x2="16" y1="9" y2="9"/><line x1="8" x2="14" y1="13" y2="13"/></svg>
+              <span class="nav-text">Action Drafts</span>
+              <span class="nav-badge neutral" id="navDraftCount">AI</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-button" data-tab="integrations">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span class="nav-text">Integrations</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <div class="agent-status-card">
+        <div class="agent-status-text">
+          <span class="agent-status-label">
+            <span class="status-dot-pulse"></span> Agent Operational
+          </span>
+          <span class="agent-status-sub">Hindsight Memory Active</span>
+        </div>
+      </div>
+
+      <div class="user-profile-row">
+        <div class="user-avatar">FM</div>
+        <div class="user-info">
+          <span class="user-name">Finance Manager</span>
+          <span class="user-role">Administrator</span>
+        </div>
+        <button class="user-action-btn" title="Toggle Sidebar" onclick="toggleSidebarCollapse()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View Area -->
+  <div class="main-wrapper">
+
+    <!-- Top Navigation Header -->
+    <header class="top-header">
+      <div class="header-left">
+        <button class="sidebar-toggle-btn" id="sidebarToggle" title="Toggle Sidebar" onclick="toggleSidebarCollapse()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+        </button>
+        <div class="header-titles">
+          <div class="header-breadcrumb" id="headerBreadcrumb">FINANCE WORKSPACE / GST INTELLIGENCE</div>
+          <h1 class="header-page-title" id="pageTitle">Overview</h1>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <span class="live-pill">
+          <span class="status-dot-pulse"></span> LIVE AGENT
+        </span>
+
+        <!-- Period Select Filter -->
+        <div class="period-select-wrap">
+          <select id="periodFilter" class="period-select" onchange="onPeriodChange(this.value)">
+            <option value="">All Filing Periods</option>
+          </select>
+          <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+
+        <button class="btn btn-secondary btn-sm-mobile" onclick="refresh()" title="Reload dashboard data">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          <span>Refresh</span>
+        </button>
+
+        <button class="btn btn-primary btn-sm-mobile" id="btnRunAgent" onclick="runAgent()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          <span>Run AI Agent</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="content-body">
+
+      <!-- ===================================================================
+           TAB 1: EXECUTIVE OVERVIEW (Finovex + Vantage Bank + Pulse)
+           =================================================================== -->
+      <section id="overview" class="tab-view">
+
+        <!-- Vantage Bank Luxury Banner -->
+        <div class="vantage-banner">
+          <div class="banner-content">
+            <div class="banner-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            </div>
+            <div class="banner-text">
+              <h2>Autonomous GST Reconciliation with Hindsight Memory</h2>
+              <p>LedgerMind audits your purchase registers against supplier GSTR-2B filings, retains persistent supplier patterns across cycles, and automatically formulates actionable resolution drafts.</p>
+            </div>
+          </div>
+          <span class="banner-badge">✦ PERSISTENT HINDSIGHT</span>
+        </div>
+
+        <!-- Finovex 4-Column Executive KPI Cards -->
+        <div class="kpi-grid">
+          <article class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Purchase Invoices</span>
+              <div class="kpi-icon-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="mInvoices">—</div>
+            <div class="kpi-footer">
+              <span class="kpi-badge success" id="mMatchedPill">100% Synced</span>
+              <span>Across sample filing cycles</span>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Vendors Tracked</span>
+              <div class="kpi-icon-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="mVendors">—</div>
+            <div class="kpi-footer">
+              <span class="kpi-badge pink">Hindsight Active</span>
+              <span>Filing behavior profiles retained</span>
+            </div>
+          </article>
+
+          <article class="kpi-card risk-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Credit at Risk</span>
+              <div class="kpi-icon-wrap" style="color: var(--risk-high); background-color: var(--risk-high-bg);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="mRisk">—</div>
+            <div class="kpi-footer">
+              <span class="kpi-badge danger">ITC Exposure</span>
+              <span>Estimated tax in open exceptions</span>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-label">Open Exceptions</span>
+              <div class="kpi-icon-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="mIssues">—</div>
+            <div class="kpi-footer">
+              <span class="kpi-badge danger" id="mHigh">— high priority</span>
+              <span>Needs follow-up</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- Quick Action Bar -->
+        <div class="quick-actions-bar">
+          <div class="quick-actions-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>Quick Operations</span>
+          </div>
+          <div class="quick-action-btns">
+            <button class="btn btn-secondary btn-sm" onclick="showTab('exceptions')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+              <span>Import CSV Records</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="showTab('gstcalc')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/></svg>
+              <span>Calculate GST</span>
+            </button>
+            <a class="btn btn-secondary btn-sm" href="/api/sample/purchase" download>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+              <span>Download Sample CSV</span>
+            </a>
+            <button class="btn btn-primary btn-sm" onclick="runAgent()">
+              <span>✦ Run Full Audit</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2-Column Analytics Grid (Pulse Chart & Activity) -->
+        <div class="dashboard-grid-2">
+          
+          <!-- Pulse Analytics & Cashflow Curves -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>Credit at Risk Trend Analysis</h3>
+                <p>Tax credit exposure across monthly filing cycles (Pulse Analytics)</p>
+              </div>
+              <span class="card-header-tag">6 FILING MONTHS</span>
+            </div>
+
+            <!-- Pulse High-Contrast Dark Chart Container -->
+            <div class="pulse-chart-container" id="pulseChartContainer">
+              <div class="pulse-chart-stats">
+                <div>
+                  <span style="font-size: 11px; text-transform: uppercase; color: var(--soft-pink); font-weight: 700; letter-spacing: 0.8px;">Cumulative Exposure</span>
+                  <div class="chart-hero-risk" id="chartTotalRisk">₹0 <small id="chartRiskTrend">Monthly Trend</small></div>
+                </div>
+                <div class="chart-legend">
+                  <div class="chart-legend-item">
+                    <span class="legend-dot"></span>
+                    <span>Credit Risk Curve</span>
+                  </div>
+                  <div class="chart-legend-item">
+                    <span class="legend-dot emerald"></span>
+                    <span>Resolved</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SVG Interactive Spline Curve -->
+              <div style="position: relative;">
+                <svg id="pulseSvg" class="pulse-svg-chart" viewBox="0 0 600 160" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="pulseGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#E9BFC4" stop-opacity="0.45"/>
+                      <stop offset="60%" stop-color="#163D32" stop-opacity="0.15"/>
+                      <stop offset="100%" stop-color="#163D32" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="pulseAreaPath" class="chart-area-fill" d=""/>
+                  <path id="pulseCurvePath" class="chart-curve-path" d=""/>
+                  <g id="pulsePointsGroup"></g>
+                </svg>
+
+                <div id="chartTooltip" class="chart-tooltip"></div>
+              </div>
+
+              <!-- X-Axis Labels -->
+              <div class="chart-x-labels" id="chartXLabels"></div>
+
+              <!-- Fallback Bar Chart Hook for Existing Code -->
+              <div id="chart" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Live Agent Activity Stream -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <h3>Agent Activity & Audit Log</h3>
+                <p>Real-time autonomous system events</p>
+              </div>
+              <span class="card-header-tag">STREAM</span>
+            </div>
+
+            <div class="activity-stream" id="activity">
+              <div class="activity-event">
+                <div class="event-icon-box green">✓</div>
+                <div class="event-details">
+                  <div class="event-title">Initializing engine…</div>
+                  <div class="event-desc">Loading purchase invoices and GSTR-2B data.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Priority Exceptions Table Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <h3>High-Priority Exceptions</h3>
+              <p>Ranked by input tax credit at risk</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="showTab('exceptions')">
+              <span>View All Reconciliation Records →</span>
+            </button>
+          </div>
+
+          <div class="table-responsive" id="topIssues">
+            <div style="padding: 24px; text-align: center; color: var(--charcoal-muted);">Loading exceptions…</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================
+           TAB 2: RECONCILIATION & INVOICES (Exceptions & Upload)
+           =================================================================== -->
+      <section id="exceptions" class="tab-view hidden">
+
+        <!-- Reconciliation Toolbar -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div class="card-header-left">
+              <h3>GSTR-2B vs Purchase Register Audit</h3>
+              <p>Reconciling book invoices with supplier filings to protect input tax credit</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="period-select-wrap">
+                <select id="monthFilter" class="period-select" onchange="loadIssues()">
+                  <option value="">All Periods</option>
+                </select>
+                <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <input type="text" id="issueSearchInput" class="form-control" placeholder="Search vendor or invoice…" style="padding: 7px 12px; font-size: 12px; width: 220px;" oninput="filterIssueTable()">
+            </div>
+          </div>
+
+          <!-- Dual CSV Upload Dropzones -->
+          <div class="upload-grid">
+            <label class="dropzone-box" id="dropzonePurchase">
+              <input type="file" accept=".csv" onchange="uploadFile('purchase', this.files[0])">
+              <div class="dropzone-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <h4>Import Purchase Register CSV</h4>
+              <p>Upload internal ERP/book purchases with columns: <code>month, vendor, gstin, invoice, invoice_date, taxable, tax</code></p>
+              <span class="btn btn-secondary btn-sm" style="margin-top: 6px;">Browse File</span>
+            </label>
+
+            <label class="dropzone-box" id="dropzoneGstr2b">
+              <input type="file" accept=".csv" onchange="uploadFile('gstr2b', this.files[0])">
+              <div class="dropzone-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+              </div>
+              <h4>Import Supplier GSTR-2B CSV</h4>
+              <p>Upload supplier filings from the GST Portal. Matches invoices fuzzily and detects mismatched tax or GSTINs.</p>
+              <span class="btn btn-secondary btn-sm" style="margin-top: 6px;">Browse File</span>
+            </label>
+          </div>
+
+          <!-- Issue Table Wrapper -->
+          <div class="table-responsive" id="issueTable">
+            <div style="padding: 24px; text-align: center; color: var(--charcoal-muted);">Loading reconciliation records…</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================
+           TAB 3: GST & TAX CALCULATOR (Connected to /api/gst/calculate)
+           =================================================================== -->
+      <section id="gstcalc" class="tab-view hidden">
+        
+        <div class="card-header" style="margin-bottom: 20px;">
+          <div class="card-header-left">
+            <h3>Interactive GST & Tax Calculator</h3>
+            <p>Compute CGST, SGST, IGST and invoice totals live via the LedgerMind GST Engine</p>
+          </div>
+          <span class="card-header-tag">GST ENGINE 2.0</span>
+        </div>
+
+        <div class="calc-grid">
+          
+          <!-- Invoice Configuration Form -->
+          <div class="card">
+            <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--charcoal);">Invoice & Supplier Specifications</h4>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="calcSupplierGstin">Supplier GSTIN (15 Digits)</label>
+                <input type="text" id="calcSupplierGstin" class="form-control" value="29ABCDE1234F1Z5" maxlength="15" placeholder="e.g. 29ABCDE1234F1Z5" onchange="autoDetectState()">
+              </div>
+              <div class="form-group">
+                <label for="calcPlaceOfSupply">Place of Supply (State Code)</label>
+                <select id="calcPlaceOfSupply" class="form-control" onchange="calculateGstLive()">
+                  <option value="29">29 — Karnataka (Intra-State)</option>
+                  <option value="27">27 — Maharashtra (Inter-State)</option>
+                  <option value="07">07 — Delhi (Inter-State)</option>
+                  <option value="33">33 — Tamil Nadu (Inter-State)</option>
+                  <option value="36">36 — Telangana (Inter-State)</option>
+                  <option value="24">24 — Gujarat (Inter-State)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="calcInvoiceNumber">Invoice Number</label>
+                <input type="text" id="calcInvoiceNumber" class="form-control" value="INV-2026-042" placeholder="e.g. INV-001">
+              </div>
+              <div class="form-group">
+                <label for="calcInvoiceDate">Invoice Date</label>
+                <input type="date" id="calcInvoiceDate" class="form-control" value="2026-10-15">
+              </div>
+            </div>
+
+            <!-- Items Table -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+              <label style="font-size: 12px; font-weight: 700; color: var(--charcoal);">Line Items</label>
+              <button class="btn btn-secondary btn-sm" onclick="addCalcItemRow()">+ Add Item</button>
+            </div>
+
+            <table class="item-table-input" id="calcItemsTable">
+              <thead>
+                <tr>
+                  <th style="width: 35%;">Item Name</th>
+                  <th style="width: 15%;">Qty</th>
+                  <th style="width: 20%;">Price (₹)</th>
+                  <th style="width: 15%;">Disc (₹)</th>
+                  <th style="width: 15%;">GST %</th>
+                  <th style="width: 30px;"></th>
+                </tr>
+              </thead>
+              <tbody id="calcItemsBody">
+                <tr>
+                  <td><input type="text" class="c-name" value="Enterprise Cloud Services" oninput="calculateGstLive()"></td>
+                  <td><input type="number" class="c-qty" value="1" min="1" oninput="calculateGstLive()"></td>
+                  <td><input type="number" class="c-price" value="45000" min="0" oninput="calculateGstLive()"></td>
+                  <td><input type="number" class="c-disc" value="0" min="0" oninput="calculateGstLive()"></td>
+                  <td>
+                    <select class="c-rate" onchange="calculateGstLive()">
+                      <option value="0">0%</option>
+                      <option value="5">5%</option>
+                      <option value="12">12%</option>
+                      <option value="18" selected>18%</option>
+                      <option value="28">28%</option>
+                    </select>
+                  </td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="removeCalcRow(this)" title="Remove item" style="color: var(--risk-high); padding: 4px;">✕</button></td>
+                </tr>
+                <tr>
+                  <td><input type="text" class="c-name" value="Hardware Security Key" oninput="calculateGstLive()"></td>
+                  <td><input type="number" class="c-qty" value="2" min="1" oninput="calculateGstLive()"></td>
+                  <td><input type="number" class="c-price" value="3500" min="0" oninput="calculateGstLive()"></td>
+                  <td><input type="number" class="c-disc" value="500" min="0" oninput="calculateGstLive()"></td>
+                  <td>
+                    <select class="c-rate" onchange="calculateGstLive()">
+                      <option value="0">0%</option>
+                      <option value="5">5%</option>
+                      <option value="12">12%</option>
+                      <option value="18" selected>18%</option>
+                      <option value="28">28%</option>
+                    </select>
+                  </td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="removeCalcRow(this)" title="Remove item" style="color: var(--risk-high); padding: 4px;">✕</button></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="resetCalcForm()">Reset</button>
+              <button class="btn btn-primary btn-sm" onclick="calculateGstLive()">Compute Taxes Now</button>
+            </div>
+          </div>
+
+          <!-- Calculation Summary Output (Vantage Dark Theme) -->
+          <div class="calc-summary-box">
+            <div>
+              <div class="summary-title">
+                <span>Tax Breakdown</span>
+                <span id="calcSupplyBadge" class="kpi-badge success" style="font-size: 10px;">INTRA-STATE</span>
+              </div>
+
+              <div class="summary-rows">
+                <div class="summary-row">
+                  <span>Taxable Value</span>
+                  <b id="resTaxable">₹51,500.00</b>
+                </div>
+                <div class="summary-row" id="rowCgst">
+                  <span>Central GST (CGST)</span>
+                  <b id="resCgst">₹4,635.00</b>
+                </div>
+                <div class="summary-row" id="rowSgst">
+                  <span>State GST (SGST)</span>
+                  <b id="resSgst">₹4,635.00</b>
+                </div>
+                <div class="summary-row" id="rowIgst" style="display: none;">
+                  <span>Integrated GST (IGST)</span>
+                  <b id="resIgst">₹0.00</b>
+                </div>
+                <div class="summary-row">
+                  <span>Total Tax Computed</span>
+                  <b id="resTotalTax" style="color: var(--soft-pink);">₹9,270.00</b>
+                </div>
+                <div class="summary-row total-row">
+                  <span>Invoice Grand Total</span>
+                  <b id="resGrandTotal" style="font-size: 20px;">₹60,770.00</b>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid rgba(245, 240, 232, 0.15); font-size: 11px; color: rgba(245, 240, 232, 0.7); line-height: 1.5;">
+              <p>✦ Calculated deterministically using <code>gst_engine.calculator</code> adhering to Section 7 & 8 of the IGST Act, 2017.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ===================================================================
+           TAB 4: VENDOR MEMORY (Hindsight Persistent Profiles)
+           =================================================================== -->
+      <section id="vendors" class="tab-view hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <h3>Vendor Behavioral Memory</h3>
+              <p>Patterns retained across multiple filing cycles via Hindsight memory bank</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="banner-badge" style="background-color: var(--forest-green-subtle); color: var(--forest-green); border-color: var(--forest-green-border);">✦ Hindsight Bank: ledgermind-gst</span>
+              <input type="text" id="vendorSearchInput" class="form-control" placeholder="Search vendor name or GSTIN…" style="padding: 7px 12px; font-size: 12px; width: 240px;" oninput="filterVendorTable()">
+            </div>
+          </div>
+
+          <div class="table-responsive" id="vendorTable">
+            <div style="padding: 24px; text-align: center; color: var(--charcoal-muted);">Loading vendor memories…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 5: ACTION DRAFTS (Groq LLM + Hindsight Follow-ups)
+           =================================================================== -->
+      <section id="actions" class="tab-view hidden">
+        <div class="card-header" style="margin-bottom: 20px;">
+          <div class="card-header-left">
+            <h3>Autonomous Vendor Follow-Up Drafts</h3>
+            <p>Agent-prepared communication letters tailored with remembered supplier habits</p>
+          </div>
+          <button class="btn btn-primary" onclick="runAgent()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            <span>Generate New Drafts</span>
+          </button>
+        </div>
+
+        <div class="drafts-grid" id="actionList">
+          <div style="grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--charcoal-muted);" class="card">
+            No drafts generated yet. Click "Generate New Drafts" or "Run AI Agent" to initiate supplier follow-ups.
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB 6: INTEGRATIONS STATUS
+           =================================================================== -->
+      <section id="integrations" class="tab-view hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <h3>Hackathon Integrations & Infrastructure Status</h3>
+              <p>Live connectivity status for persistent memory, LLMs, and desktop agents</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadIntegrations()">Check Connections ↻</button>
+          </div>
+
+          <div class="integration-grid" id="integrationStatus">
+            <div style="padding: 24px; text-align: center; color: var(--charcoal-muted); grid-column: 1 / -1;">Checking integrations…</div>
+          </div>
+
+          <div style="margin-top: 20px; padding: 14px 18px; border-radius: var(--radius-md); background-color: var(--warm-cream-subtle); border: 1px solid var(--charcoal-border); font-size: 11.5px; color: var(--charcoal-muted); line-height: 1.5;">
+            <strong>✦ Integration Note:</strong> Hindsight provides long-term persistent memory for supplier behavior. Groq accelerates LLM-based draft generation with deterministic fallbacks when keys are not set. Band AI Desktop and OpenClaw automate external agent execution.
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- App Footer -->
+    <footer class="app-footer">
+      <div>
+        <strong>LedgerMind GST Agent</strong> · Premium AI Finance Assistant
+      </div>
+      <div>
+        <span>Demo Environment · Synthetic Data · No Direct GST Portal Credentials Needed</span>
+      </div>
+    </footer>
+
+  </div>
+
+</div>
+
+<!-- Toast Container (shadcn Sonner Style) -->
+<div class="toast-container">
+  <div id="toast" class="toast"></div>
+</div>
+
+<!-- Main Script -->
+<script src="/static/app.js?v=4"></script>
+</body>
+</html>
