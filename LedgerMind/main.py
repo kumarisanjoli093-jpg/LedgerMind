@@ -8,7 +8,8 @@ from datetime import date, timedelta
 from difflib import SequenceMatcher
 from pathlib import Path
 from integrations import memory_status, remember_vendor_event, recall_vendor_context, generate_vendor_message
-
+from gst_engine.calculator import calculate_invoice
+from gst_engine.reports import generate_gst_summary_report
 BASE=Path(__file__).parent
 DB=BASE/'gst_agent.db'
 app=FastAPI(title='LedgerMind GST Agent', version='2.0.0')
@@ -158,3 +159,33 @@ def sample(kind:str):
 @app.get('/api/actions')
 def actions():
     c=db(); rows=[dict(x) for x in c.execute('SELECT * FROM actions ORDER BY id DESC').fetchall()]; c.close(); return rows
+# ==========================================
+# GST Engine & Financial Logic Endpoints
+# ==========================================
+
+@app.post("/api/gst/calculate")
+async def api_calculate_gst(request: Request):
+    """Calculates CGST, SGST, IGST and grand totals for an invoice."""
+    try:
+        payload = await request.json()
+        result = calculate_invoice(payload)
+        return {"status": "success", "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal calculation error: {str(e)}")
+
+@app.post("/api/gst/reports")
+async def api_generate_gst_report(request: Request):
+    """Generates GST summary reports (B2B vs B2C breakdown, rate-wise summary)."""
+    try:
+        data = await request.json()
+        invoices = data.get("invoices", [])
+        if not invoices:
+            raise ValueError("No invoices provided to generate report")
+        report = generate_gst_summary_report(invoices)
+        return {"status": "success", "report": report}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating report: {str(e)}")
