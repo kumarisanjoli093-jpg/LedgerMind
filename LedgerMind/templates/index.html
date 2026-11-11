@@ -4,179 +4,233 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101c2c">
-  <title>LedgerMind | GST Intelligence</title>
+  <meta name="theme-color" content="#f5f3ec">
+  <meta name="description" content="LedgerMind — AI-powered GST and financial intelligence.">
+  <title>LedgerMind | Financial Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <a class="brand" href="#">
-        <span class="brand-mark">L</span>
-        <span><strong>LedgerMind</strong><small>FINANCIAL INTELLIGENCE</small></span>
-      </a>
+<div class="app-shell">
 
-      <div class="workspace-label">WORKSPACE</div>
-      <nav class="navigation">
-        <button class="nav-item active" data-view="overview"><span>◫</span> Overview</button>
-        <button class="nav-item" data-view="invoices"><span>▤</span> Invoice intelligence</button>
-        <button class="nav-item" data-view="assistant"><span>✳</span> AI assistant</button>
-        <button class="nav-item" data-view="knowledge"><span>▧</span> Knowledge base</button>
-        <button class="nav-item" data-view="memory"><span>◉</span> Vendor memory</button>
-      </nav>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#" data-go="overview">
+      <span class="brand-mark">L</span>
+      <span><strong>LedgerMind</strong><small>GST INTELLIGENCE</small></span>
+    </a>
 
-      <div class="sidebar-bottom">
-        <div class="system-card">
-          <span class="status-dot" id="systemDot"></span>
-          <div><strong id="systemLabel">Checking system</strong><small>LedgerMind services</small></div>
-        </div>
-        <div class="sidebar-footer">LedgerMind GST Intelligence<br>AI-powered financial workspace</div>
+    <button class="workspace-switch">
+      <span class="workspace-dot"></span>
+      <span><strong>Finance Workspace</strong><small>GST Financial Intelligence</small></span>
+      <span>⌄</span>
+    </button>
+
+    <div class="nav-label">CORE PLATFORM</div>
+    <nav class="navigation">
+      <button class="nav-item active" data-view="overview"><span>▦</span>Overview</button>
+      <button class="nav-item" data-view="invoices"><span>▤</span>Invoice Intelligence</button>
+      <button class="nav-item" data-view="knowledge"><span>▧</span>Knowledge Base</button>
+      <button class="nav-item" data-view="assistant"><span>✳</span>AI Financial Assistant</button>
+    </nav>
+
+    <div class="nav-label">FINANCIAL INTELLIGENCE</div>
+    <nav class="navigation">
+      <button class="nav-item" data-view="memory"><span>◉</span>Vendor Memory</button>
+      <button class="nav-item" data-view="activity"><span>◷</span>Agent Activity</button>
+      <button class="nav-item" data-view="integrations"><span>⌘</span>Integrations & Status</button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="system-card">
+        <span class="status-dot" id="systemDot"></span>
+        <div><strong id="systemLabel">Checking services</strong><small>LedgerMind AI services</small></div>
       </div>
-    </aside>
+      <div class="profile">
+        <span class="profile-avatar">LM</span>
+        <span><strong>Finance Workspace</strong><small>Administrator</small></span>
+      </div>
+      <div class="sidebar-footer">LedgerMind · Financial Intelligence</div>
+    </div>
+  </aside>
 
-    <main class="main-content">
-      <header class="topbar">
+  <main class="main-content">
+    <header class="topbar">
+      <div class="top-heading">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">☰</button>
         <div>
-          <div class="eyebrow">FINANCIAL INTELLIGENCE / GST</div>
+          <div class="eyebrow">FINANCE WORKSPACE / GST INTELLIGENCE</div>
           <h1 id="pageTitle">Overview</h1>
-          <p id="pageDescription">Your financial intelligence workspace.</p>
+          <p id="pageDescription">Your intelligent financial command centre.</p>
         </div>
-        <div class="top-actions">
-          <span class="connection"><span class="status-dot"></span> <span id="connectionLabel">Checking connection</span></span>
-          <button class="button button-outline" id="refreshButton">↻ Refresh</button>
-        </div>
-      </header>
+      </div>
+      <div class="top-actions">
+        <span class="live-pill"><span class="status-dot"></span>LIVE AGENT</span>
+        <button class="button button-outline" id="refreshButton">↻ Refresh</button>
+        <button class="button button-primary" data-go="assistant">✳ Run AI Agent</button>
+      </div>
+    </header>
+
+    <div class="content-area">
 
       <section class="view active" id="overview">
         <div class="hero">
-          <div>
-            <div class="eyebrow light">INTELLIGENT FINANCIAL WORKSPACE</div>
-            <h2>Understand your finances.<br><span>Make smarter decisions.</span></h2>
-            <p>Extract invoice data, search financial documents and ask your AI assistant questions about your records.</p>
-            <button class="button button-light" data-go="assistant">Talk to LedgerMind ↗</button>
+          <div class="hero-content">
+            <span class="hero-tag">✦ INTELLIGENT FINANCIAL WORKSPACE</span>
+            <h2>Autonomous GST intelligence.<br><span>Context that remembers.</span></h2>
+            <p>Process invoice information, retrieve financial knowledge and use persistent vendor context with your AI-powered financial assistant.</p>
+            <div class="hero-actions">
+              <button class="button button-light" data-go="assistant">Open AI Assistant ↗</button>
+              <button class="button button-ghost" data-go="invoices">Process Invoice →</button>
+            </div>
           </div>
-          <div class="hero-symbol">L<span>✳</span></div>
+          <div class="hero-art">
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="hero-monogram">L<span>✳</span></div>
+            <div class="floating-chip">AI FINANCIAL AGENT</div>
+          </div>
         </div>
 
         <div class="section-heading">
-          <div><h2>Your tools</h2><p>Work with your financial information.</p></div>
+          <div><span class="eyebrow">WORKSPACE SNAPSHOT</span><h2>Financial intelligence overview</h2><p>Live service information and available workspace tools.</p></div>
+          <span class="updated-label">Updated on refresh</span>
         </div>
 
-        <div class="tool-grid">
-          <button class="tool-card" data-go="invoices">
-            <span class="tool-icon">▤</span>
-            <strong>Invoice intelligence</strong>
-            <p>Upload invoices and extract structured GST and supplier information.</p>
-            <span class="tool-link">Process an invoice →</span>
+        <div class="metric-grid">
+          <article class="metric-card">
+            <div class="metric-top"><span>INVOICE EXTRACTION</span><span class="metric-icon">▤</span></div>
+            <div class="metric-value">AI</div>
+            <div class="metric-bottom"><span class="metric-tag">Available</span><span>PDF and image processing</span></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span>DOCUMENT RETRIEVAL</span><span class="metric-icon">▧</span></div>
+            <div class="metric-value">RAG</div>
+            <div class="metric-bottom"><span class="metric-tag">Configured</span><span>Financial knowledge base</span></div>
+          </article>
+          <article class="metric-card metric-highlight">
+            <div class="metric-top"><span>PERSISTENT MEMORY</span><span class="metric-icon">◉</span></div>
+            <div class="metric-value" id="overviewMemory">Checking</div>
+            <div class="metric-bottom"><span class="metric-tag">Hindsight</span><span>Vendor context integration</span></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span>AI ASSISTANT</span><span class="metric-icon">✳</span></div>
+            <div class="metric-value">LIVE</div>
+            <div class="metric-bottom"><span class="metric-tag">API</span><span>Financial question answering</span></div>
+          </article>
+        </div>
+
+        <div class="section-heading">
+          <div><span class="eyebrow">PLATFORM MODULES</span><h2>Your financial workspace</h2><p>Access the tools available in LedgerMind.</p></div>
+        </div>
+
+        <div class="module-grid">
+          <button class="module-card" data-go="invoices">
+            <span class="module-icon green">▤</span><span class="module-arrow">↗</span>
+            <h3>Invoice Intelligence</h3>
+            <p>Upload PDF or image invoices and extract structured financial and GST information using AI.</p>
+            <span class="module-link">Open invoice workspace →</span>
           </button>
-          <button class="tool-card" data-go="assistant">
-            <span class="tool-icon">✳</span>
-            <strong>AI financial assistant</strong>
-            <p>Ask questions about invoices, vendors and stored financial records.</p>
-            <span class="tool-link">Ask a question →</span>
+          <button class="module-card" data-go="assistant">
+            <span class="module-icon purple">✳</span><span class="module-arrow">↗</span>
+            <h3>AI Financial Assistant</h3>
+            <p>Ask natural-language questions and get answers using available financial context.</p>
+            <span class="module-link">Talk to LedgerMind →</span>
           </button>
-          <button class="tool-card" data-go="knowledge">
-            <span class="tool-icon">▧</span>
-            <strong>Knowledge base</strong>
-            <p>Add financial reference information for retrieval by your AI agent.</p>
-            <span class="tool-link">Add information →</span>
+          <button class="module-card" data-go="knowledge">
+            <span class="module-icon blue">▧</span><span class="module-arrow">↗</span>
+            <h3>Knowledge Base & RAG</h3>
+            <p>Ingest financial reference information and retrieve relevant context for AI responses.</p>
+            <span class="module-link">Manage knowledge →</span>
           </button>
-          <button class="tool-card" data-go="memory">
-            <span class="tool-icon">◉</span>
-            <strong>Persistent memory</strong>
-            <p>Check the Hindsight memory integration status.</p>
-            <span class="tool-link">View memory status →</span>
+          <button class="module-card" data-go="memory">
+            <span class="module-icon gold">◉</span><span class="module-arrow">↗</span>
+            <h3>Hindsight Vendor Memory</h3>
+            <p>Check persistent memory integration and explore context-aware vendor intelligence.</p>
+            <span class="module-link">Explore memory →</span>
+          </button>
+          <button class="module-card" data-go="activity">
+            <span class="module-icon blue">◷</span><span class="module-arrow">↗</span>
+            <h3>Agent Activity</h3>
+            <p>Review the activity and results that are available from your AI workflows.</p>
+            <span class="module-link">View activity →</span>
+          </button>
+          <button class="module-card" data-go="integrations">
+            <span class="module-icon green">⌘</span><span class="module-arrow">↗</span>
+            <h3>System Integrations</h3>
+            <p>Check the backend, RAG and Hindsight service status.</p>
+            <span class="module-link">Check connections →</span>
           </button>
         </div>
 
-        <div class="notice">
-          <strong>Data transparency</strong>
-          <p>LedgerMind displays information processed through its connected AI services. GST portal filing, live GSTR-2B synchronization and automated reconciliation are not represented as active unless separately connected and verified.</p>
-        </div>
+        <div class="notice"><strong>Financial data transparency</strong><p>Metrics are not fabricated. Live GST portal synchronization, GSTR-2B reconciliation, financial risk calculations and vendor analytics require their corresponding data integrations and backend functionality.</p></div>
       </section>
 
       <section class="view" id="invoices">
-        <div class="section-heading">
-          <div><h2>Invoice intelligence</h2><p>Extract structured information from your invoices.</p></div>
-        </div>
+        <div class="section-heading"><div><span class="eyebrow">DOCUMENT PROCESSING</span><h2>Invoice Intelligence</h2><p>Extract structured financial information from your invoice documents.</p></div></div>
         <div class="panel">
-          <div class="panel-title"><span class="tool-icon">▤</span><div><h3>Upload an invoice</h3><p>Supported formats: PDF, JPG, PNG and WEBP. Maximum size: 15 MB.</p></div></div>
-          <label class="upload-area" for="invoiceFile">
-            <span class="upload-symbol">↑</span>
-            <strong>Choose an invoice file</strong>
-            <span id="fileName">Click here to select a PDF or image</span>
-            <input type="file" id="invoiceFile" accept=".pdf,.jpg,.jpeg,.png,.webp">
-          </label>
-          <button class="button button-primary" id="extractButton">Extract invoice data</button>
+          <div class="panel-title"><span class="module-icon green">▤</span><div><h3>AI invoice extraction</h3><p>Upload a PDF or image to extract invoice information.</p></div></div>
+          <label class="upload-area" for="invoiceFile"><span class="upload-symbol">↑</span><strong>Drop your invoice here or browse files</strong><span id="fileName">PDF, JPG, PNG or WEBP · Maximum 15 MB</span><input type="file" id="invoiceFile" accept=".pdf,.jpg,.jpeg,.png,.webp"></label>
+          <button class="button button-primary" id="extractButton">✳ Extract invoice data</button>
           <div class="loading hidden" id="invoiceLoading">Processing invoice with AI…</div>
           <div id="invoiceResult" class="result-area"></div>
         </div>
+        <div class="notice"><strong>Extraction and validation</strong><p>Review extracted information before using it for accounting or tax decisions. AI extraction does not itself verify GST portal filings.</p></div>
       </section>
 
       <section class="view" id="assistant">
-        <div class="section-heading">
-          <div><h2>AI financial assistant</h2><p>Ask questions about your stored financial records.</p></div>
-        </div>
+        <div class="section-heading"><div><span class="eyebrow">CONVERSATIONAL INTELLIGENCE</span><h2>AI Financial Assistant</h2><p>Ask questions about your available financial records and documents.</p></div></div>
         <div class="panel assistant-panel">
-          <div class="assistant-intro">
-            <span class="assistant-avatar">L</span>
-            <div><strong>LedgerMind AI</strong><small>Financial question answering</small></div>
-          </div>
-          <div class="suggestions">
-            <button class="suggestion">Summarize the financial documents I have uploaded.</button>
-            <button class="suggestion">What information is available about my vendors?</button>
-            <button class="suggestion">Explain the GST details in my stored invoices.</button>
-          </div>
-          <div class="chat-output" id="chatOutput">
-            <div class="chat-message bot">Hello! I'm LedgerMind. Ask me about information stored in your financial knowledge base.</div>
-          </div>
-          <form id="askForm" class="chat-form">
-            <textarea id="questionInput" rows="2" placeholder="Ask LedgerMind a financial question…" required></textarea>
-            <button class="button button-primary" type="submit" id="askButton">Send ↑</button>
-          </form>
+          <div class="assistant-intro"><span class="assistant-avatar">L</span><div><strong>LedgerMind AI</strong><small>Financial intelligence agent</small></div><span class="live-pill">READY</span></div>
+          <div class="suggestions"><button class="suggestion">Summarize my uploaded financial documents</button><button class="suggestion">What information is available about my vendors?</button><button class="suggestion">Explain the GST details in my stored invoices</button></div>
+          <div class="chat-output" id="chatOutput"><div class="chat-message bot">Welcome to LedgerMind. Ask me about your stored financial information, invoices or vendor context.</div></div>
+          <form id="askForm" class="chat-form"><textarea id="questionInput" rows="2" placeholder="Ask LedgerMind a financial question…" required></textarea><button class="button button-primary" type="submit" id="askButton">Send ↑</button></form>
           <p class="form-note">Answers depend on the documents and information available to the agent. Verify important financial and tax decisions independently.</p>
         </div>
       </section>
 
       <section class="view" id="knowledge">
-        <div class="section-heading">
-          <div><h2>Knowledge base</h2><p>Add financial information for AI-powered retrieval.</p></div>
-        </div>
+        <div class="section-heading"><div><span class="eyebrow">DOCUMENT INTELLIGENCE</span><h2>Knowledge Base</h2><p>Build a searchable financial knowledge repository for your AI agent.</p></div></div>
         <div class="panel">
-          <h3>Add a reference document</h3>
-          <p class="panel-description">Enter financial reference text, vendor information or other useful business records.</p>
+          <div class="panel-title"><span class="module-icon blue">▧</span><div><h3>Ingest financial information</h3><p>Add reference text and vendor information to the RAG system.</p></div></div>
           <form id="ingestForm">
-            <label class="field-label" for="sourceInput">Source name</label>
-            <input class="text-input" id="sourceInput" maxlength="200" placeholder="e.g. Vendor payment policy">
-            <label class="field-label" for="vendorInput">Vendor (optional)</label>
-            <input class="text-input" id="vendorInput" maxlength="200" placeholder="Vendor name">
-            <label class="field-label" for="documentInput">Document content</label>
-            <textarea class="text-input large-input" id="documentInput" maxlength="200000" placeholder="Paste your financial reference information here…" required></textarea>
-            <button class="button button-primary" type="submit" id="ingestButton">Add to knowledge base</button>
+            <label class="field-label" for="sourceInput">Source name</label><input class="text-input" id="sourceInput" maxlength="200" placeholder="e.g. Vendor payment policy">
+            <label class="field-label" for="vendorInput">Vendor (optional)</label><input class="text-input" id="vendorInput" maxlength="200" placeholder="Vendor name">
+            <label class="field-label" for="documentInput">Document content</label><textarea class="text-input large-input" id="documentInput" maxlength="200000" placeholder="Paste financial reference information here…" required></textarea>
+            <button class="button button-primary" type="submit" id="ingestButton">＋ Add to knowledge base</button>
           </form>
           <div id="ingestResult" class="result-area"></div>
         </div>
       </section>
 
       <section class="view" id="memory">
-        <div class="section-heading">
-          <div><h2>Persistent vendor memory</h2><p>Hindsight integration and agent memory status.</p></div>
-        </div>
+        <div class="section-heading"><div><span class="eyebrow">PERSISTENT INTELLIGENCE</span><h2>Vendor Memory</h2><p>Hindsight integration and persistent agent memory status.</p></div><button class="button button-outline" id="memoryRefresh">↻ Refresh status</button></div>
+        <div class="memory-banner"><div class="memory-symbol">◉</div><div><span class="eyebrow light">HINDSIGHT MEMORY LAYER</span><h2>Financial context that carries forward.</h2><p>Persistent memory integration for context-aware vendor assistance.</p></div></div>
         <div class="panel">
-          <div class="panel-title"><span class="tool-icon">◉</span><div><h3>Hindsight memory service</h3><p>Persistent memory integration for LedgerMind.</p></div></div>
+          <div class="panel-title"><span class="module-icon gold">◉</span><div><h3>Hindsight memory service</h3><p>Current status reported by the backend.</p></div></div>
           <div class="status-row"><span>Integration status</span><strong id="hindsightStatus">Checking…</strong></div>
           <div class="status-row"><span>AI agent</span><strong id="agentStatus">Checking…</strong></div>
           <div class="status-row"><span>RAG availability</span><strong id="ragStatus">Checking…</strong></div>
-          <button class="button button-outline" id="memoryRefresh">↻ Check status again</button>
-          <div class="notice"><strong>About persistent memory</strong><p>Hindsight status indicates whether the backend reports the integration as available. It does not by itself prove that a vendor memory has been saved or recalled successfully.</p></div>
+          <div class="notice"><strong>Memory verification</strong><p>An available integration status does not by itself prove that a vendor memory was successfully saved or recalled. Verify those operations using real interactions.</p></div>
         </div>
       </section>
 
-      <footer>LedgerMind <span>GST Financial Intelligence</span></footer>
-    </main>
-  </div>
+      <section class="view" id="activity">
+        <div class="section-heading"><div><span class="eyebrow">OBSERVABILITY</span><h2>Agent Activity</h2><p>Available application and service information.</p></div></div>
+        <div class="panel"><h3>Agent operations</h3><p class="panel-description">The current backend exposes service status and AI workflows. A persistent execution audit log is not yet exposed through the current API.</p><div class="status-row"><span>Application</span><strong>LedgerMind</strong></div><div class="status-row"><span>AI API</span><strong>Available for testing</strong></div><div class="status-row"><span>Activity history</span><strong>Not exposed by current API</strong></div></div>
+      </section>
 
-  <div class="toast" id="toast" role="status"></div>
-  <script src="/static/app.js"></script>
+      <section class="view" id="integrations">
+        <div class="section-heading"><div><span class="eyebrow">SYSTEM HEALTH</span><h2>Integrations & Status</h2><p>Check the services reported by your deployed backend.</p></div></div>
+        <div class="panel"><div class="status-row"><span>LedgerMind backend</span><strong id="integrationBackend">Checking…</strong></div><div class="status-row"><span>AI agent</span><strong id="integrationAgent">Checking…</strong></div><div class="status-row"><span>RAG</span><strong id="integrationRag">Checking…</strong></div><div class="status-row"><span>Hindsight</span><strong id="integrationMemory">Checking…</strong></div><button class="button button-primary" id="integrationRefresh">↻ Check integrations</button></div>
+      </section>
+
+    </div>
+    <footer>LedgerMind <span>AI-powered GST Financial Intelligence</span></footer>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script src="/static/app.js"></script>
 </body>
 </html>
