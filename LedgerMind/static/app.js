@@ -25,7 +25,7 @@ function displayValue(value) {
     }
 
     if (typeof value === "object") {
-        return JSON.stringify(value);
+        return JSON.stringify(value, null, 2);
     }
 
     return String(value);
@@ -38,14 +38,11 @@ function toast(message) {
     element.textContent = message;
     element.classList.add("show");
 
-    setTimeout(() => {
-        element.classList.remove("show");
-    }, 3500);
+    setTimeout(() => element.classList.remove("show"), 3500);
 }
 
 async function api(url, options = {}) {
     const response = await fetch(url, options);
-
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -57,11 +54,54 @@ async function api(url, options = {}) {
     return data;
 }
 
+function setText(id, value) {
+    const element = $(id);
+    if (element) element.textContent = displayValue(value);
+}
+
+function setHTML(id, value) {
+    const element = $(id);
+    if (element) element.innerHTML = value;
+}
+
 // ==================================================
 // NAVIGATION
 // ==================================================
 
+const pageDetails = {
+    overview: [
+        "Overview",
+        "Your financial intelligence workspace."
+    ],
+    invoices: [
+        "Invoice intelligence",
+        "Extract structured information from your invoices."
+    ],
+    knowledge: [
+        "Knowledge base",
+        "Manage information available to your AI agent."
+    ],
+    assistant: [
+        "AI financial assistant",
+        "Ask questions about your financial records."
+    ],
+    memory: [
+        "Vendor memory",
+        "Monitor persistent memory and connected services."
+    ],
+    activity: [
+        "Activity",
+        "Review the available system and service information."
+    ],
+    integrations: [
+        "Integrations",
+        "Check the status of connected services."
+    ]
+};
+
 function showView(view) {
+    if (!pageDetails[view]) return;
+
     document.querySelectorAll(".view").forEach(section => {
         section.classList.toggle("active", section.id === view);
     });
@@ -73,35 +113,13 @@ function showView(view) {
         );
     });
 
-    const titles = {
-        overview: [
-            "Overview",
-            "Your financial intelligence workspace."
-        ],
-        invoices: [
-            "Invoice intelligence",
-            "Extract structured information from invoices."
-        ],
-        assistant: [
-            "AI financial assistant",
-            "Ask questions about your financial records."
-        ],
-        knowledge: [
-            "Knowledge base",
-            "Manage information available to your AI agent."
-        ],
-        memory: [
-            "Vendor memory",
-            "Persistent memory and integration status."
-        ]
-    };
+    setText("pageTitle", pageDetails[view][0]);
+    setText("pageDescription", pageDetails[view][1]);
 
-    if (titles[view]) {
-        $("pageTitle").textContent = titles[view][0];
-        $("pageDescription").textContent = titles[view][1];
-    }
+    const sidebar = document.querySelector(".sidebar");
+    if (sidebar) sidebar.classList.remove("open");
 
-    if (view === "memory") {
+    if (view === "memory" || view === "integrations") {
         checkStatus();
     }
 }
@@ -113,303 +131,379 @@ document.querySelectorAll("[data-view]").forEach(button => {
 });
 
 document.querySelectorAll("[data-go]").forEach(button => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", event => {
+        event.preventDefault();
         showView(button.dataset.go);
     });
 });
+
+// Mobile sidebar
+const menuToggle = $("menuToggle");
+
+if (menuToggle) {
+    menuToggle.addEventListener("click", () => {
+        document.querySelector(".sidebar")?.classList.toggle("open");
+    });
+}
 
 // ==================================================
 // BACKEND AND SERVICE STATUS
 // ==================================================
 
+function updateStatusElement(id, value, state) {
+    const element = $(id);
+    if (!element) return;
+
+    element.textContent = value;
+
+    if (state) {
+        element.dataset.status = state;
+    }
+}
+
 async function checkStatus() {
     try {
         const data = await api("/api/ai/status");
 
-        $("systemDot").className = "status-dot good";
-        $("systemLabel").textContent = "Backend connected";
-        $("connectionLabel").textContent = "Backend connected";
+        const backendReady = data.success !== false;
 
-        $("hindsightStatus").textContent =
-            data.hindsight_status || "Not reported";
+        const dot = $("systemDot");
+        if (dot) {
+            dot.className = backendReady
+                ? "status-dot good"
+                : "status-dot bad";
+        }
 
-        $("agentStatus").textContent =
-            data.agent || "Not reported";
+        setText(
+            "systemLabel",
+            backendReady ? "Backend connected" : "Backend unavailable"
+        );
 
-        $("ragStatus").textContent =
-            data.rag_available ? "Available" : "Unavailable";
+        const hindsight = data.hindsight_status || "Not reported";
+        const agent = data.agent || "Not reported";
+        const rag = data.rag_available ? "Available" : "Unavailable";
+
+        updateStatusElement("hindsightStatus", hindsight);
+        updateStatusElement("agentStatus", agent);
+        updateStatusElement("ragStatus", rag);
+
+        updateStatusElement("integrationBackend", "Connected");
+        updateStatusElement("integrationAgent", agent);
+        updateStatusElement("integrationRag", rag);
+        updateStatusElement("integrationMemory", hindsight);
+
+        updateStatusElement(
+            "overviewMemory",
+            hindsight
+        );
 
     } catch (error) {
-        $("systemDot").className = "status-dot bad";
-        $("systemLabel").textContent = "Backend unavailable";
-        $("connectionLabel").textContent = "Connection error";
+        const dot = $("systemDot");
+        if (dot) dot.className = "status-dot bad";
 
-        $("hindsightStatus").textContent = "Unable to check";
-        $("agentStatus").textContent = "Unable to check";
-        $("ragStatus").textContent = "Unable to check";
+        setText("systemLabel", "Backend unavailable");
+
+        [
+            "hindsightStatus",
+            "agentStatus",
+            "ragStatus",
+            "integrationBackend",
+            "integrationAgent",
+            "integrationRag",
+            "integrationMemory"
+        ].forEach(id => {
+            setText(id, "Unable to check");
+        });
+
+        setText("overviewMemory", "Unable to check");
 
         console.error("Status check failed:", error);
     }
 }
 
-$("refreshButton").addEventListener("click", checkStatus);
-$("memoryRefresh").addEventListener("click", checkStatus);
+["refreshButton", "memoryRefresh", "integrationRefresh"].forEach(id => {
+    const button = $(id);
+    if (button) button.addEventListener("click", checkStatus);
+});
 
 // ==================================================
 // INVOICE UPLOAD AND EXTRACTION
 // ==================================================
 
-$("invoiceFile").addEventListener("change", event => {
-    const file = event.target.files[0];
+const invoiceFile = $("invoiceFile");
 
-    $("fileName").textContent = file
-        ? `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
-        : "Click here to select a PDF or image";
-});
+if (invoiceFile) {
+    invoiceFile.addEventListener("change", event => {
+        const file = event.target.files?.[0];
 
-$("extractButton").addEventListener("click", async () => {
-    const file = $("invoiceFile").files[0];
+        setText(
+            "fileName",
+            file
+                ? `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
+                : "Click here to select a PDF or image"
+        );
+    });
+}
 
-    if (!file) {
-        toast("Please select an invoice first.");
-        return;
-    }
+const extractButton = $("extractButton");
 
-    const allowedTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/webp"
-    ];
+if (extractButton) {
+    extractButton.addEventListener("click", async () => {
+        const file = $("invoiceFile")?.files?.[0];
 
-    if (!allowedTypes.includes(file.type)) {
-        toast("Upload a PDF, JPG, PNG or WEBP file.");
-        return;
-    }
+        if (!file) {
+            toast("Please select an invoice first.");
+            return;
+        }
 
-    if (file.size > 15 * 1024 * 1024) {
-        toast("Maximum file size is 15 MB.");
-        return;
-    }
+        const allowedTypes = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
 
-    const button = $("extractButton");
+        if (!allowedTypes.includes(file.type)) {
+            toast("Upload a PDF, JPG, PNG or WEBP file.");
+            return;
+        }
 
-    button.disabled = true;
-    button.textContent = "Processing...";
+        if (file.size > 15 * 1024 * 1024) {
+            toast("Maximum file size is 15 MB.");
+            return;
+        }
 
-    $("invoiceLoading").classList.remove("hidden");
-    $("invoiceResult").innerHTML = "";
+        extractButton.disabled = true;
+        extractButton.textContent = "Processing...";
 
-    try {
-        const formData = new FormData();
-        formData.append("file", file);
+        $("invoiceLoading")?.classList.remove("hidden");
+        setHTML("invoiceResult", "");
 
-        const data = await api("/api/ai/extract-invoice", {
-            method: "POST",
-            body: formData
-        });
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
 
-        const invoice = data.invoice || {};
+            const data = await api("/api/ai/extract-invoice", {
+                method: "POST",
+                body: formData
+            });
 
-        $("invoiceResult").innerHTML = `
-            <div class="result-card">
-                <div class="success-text">
-                    ${escapeHTML(data.message || "Invoice processed.")}
+            const invoice = data.invoice || {};
+
+            const fields = Object.entries(invoice).map(([key, value]) => `
+                <div class="result-field">
+                    <small>${escapeHTML(key.replaceAll("_", " "))}</small>
+                    <strong>${escapeHTML(displayValue(value))}</strong>
                 </div>
+            `).join("");
 
-                <h3 style="margin-top:16px">
-                    Extracted invoice information
-                </h3>
+            setHTML("invoiceResult", `
+                <div class="result-card">
+                    <div class="success-text">
+                        ${escapeHTML(data.message || "Invoice processed.")}
+                    </div>
 
-                <div class="result-grid">
-                    ${Object.entries(invoice).map(([key, value]) => `
-                        <div class="result-field">
-                            <small>
-                                ${escapeHTML(key.replaceAll("_", " "))}
-                            </small>
-                            <strong>
-                                ${escapeHTML(displayValue(value))}
-                            </strong>
-                        </div>
-                    `).join("")}
+                    <h3 style="margin-top:16px">
+                        Extracted invoice information
+                    </h3>
+
+                    <div class="result-grid">
+                        ${fields || "<p>No structured invoice fields were returned.</p>"}
+                    </div>
+
+                    <p class="form-note">
+                        Document ID:
+                        ${escapeHTML(data.document_id || "Not provided")}
+                    </p>
+
+                    <p class="form-note">
+                        RAG chunks added:
+                        ${escapeHTML(data.rag_chunks_added ?? "Not reported")}
+                    </p>
                 </div>
+            `);
 
-                <p class="form-note">
-                    Document ID:
-                    ${escapeHTML(data.document_id || "Not provided")}
-                </p>
+            toast("Invoice extraction completed.");
 
-                <p class="form-note">
-                    RAG chunks added:
-                    ${escapeHTML(data.rag_chunks_added ?? "Not reported")}
-                </p>
-            </div>
-        `;
+        } catch (error) {
+            setHTML("invoiceResult", `
+                <div class="error-text">
+                    ${escapeHTML(error.message)}
+                </div>
+            `);
 
-        toast("Invoice extraction completed.");
+            toast("Invoice extraction failed.");
+            console.error("Invoice extraction:", error);
 
-    } catch (error) {
-        $("invoiceResult").innerHTML = `
-            <div class="error-text">
-                ${escapeHTML(error.message)}
-            </div>
-        `;
-
-        toast("Invoice extraction failed.");
-        console.error(error);
-
-    } finally {
-        button.disabled = false;
-        button.textContent = "Extract invoice data";
-        $("invoiceLoading").classList.add("hidden");
-    }
-});
+        } finally {
+            extractButton.disabled = false;
+            extractButton.textContent = "Extract invoice data";
+            $("invoiceLoading")?.classList.add("hidden");
+        }
+    });
+}
 
 // ==================================================
 // AI FINANCIAL ASSISTANT
 // ==================================================
 
 function addMessage(message, type) {
-    const element = document.createElement("div");
+    const output = $("chatOutput");
+    if (!output) return;
 
+    const element = document.createElement("div");
     element.className = `chat-message ${type}`;
     element.textContent = message;
 
-    $("chatOutput").appendChild(element);
-
-    $("chatOutput").scrollTop =
-        $("chatOutput").scrollHeight;
+    output.appendChild(element);
+    output.scrollTop = output.scrollHeight;
 }
 
 document.querySelectorAll(".suggestion").forEach(button => {
     button.addEventListener("click", () => {
-        $("questionInput").value = button.textContent.trim();
-        $("questionInput").focus();
+        const input = $("questionInput");
+        if (!input) return;
+
+        input.value = button.textContent.trim();
+        input.focus();
     });
 });
 
-$("askForm").addEventListener("submit", async event => {
-    event.preventDefault();
+const askForm = $("askForm");
 
-    const question = $("questionInput").value.trim();
+if (askForm) {
+    askForm.addEventListener("submit", async event => {
+        event.preventDefault();
 
-    if (!question) return;
+        const input = $("questionInput");
+        const button = $("askButton");
 
-    addMessage(question, "user");
+        const question = input?.value.trim();
+        if (!question || !button) return;
 
-    $("questionInput").value = "";
+        addMessage(question, "user");
+        input.value = "";
 
-    const button = $("askButton");
+        button.disabled = true;
+        button.textContent = "Thinking...";
 
-    button.disabled = true;
-    button.textContent = "Thinking...";
+        try {
+            const data = await api("/api/ai/ask", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    question,
+                    top_k: 5
+                })
+            });
 
-    try {
-        const data = await api("/api/ai/ask", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                question: question,
-                top_k: 5
-            })
-        });
+            const answer =
+                typeof data === "string"
+                    ? data
+                    : data.answer ||
+                      data.response ||
+                      data.message ||
+                      JSON.stringify(data, null, 2);
 
-        const answer =
-            typeof data === "string"
-                ? data
-                : data.answer ||
-                  data.response ||
-                  data.message ||
-                  JSON.stringify(data, null, 2);
+            addMessage(answer, "bot");
 
-        addMessage(answer, "bot");
+        } catch (error) {
+            addMessage(
+                "Unable to process your question: " + error.message,
+                "bot"
+            );
 
-    } catch (error) {
-        addMessage(
-            "Unable to process your question: " + error.message,
-            "bot"
-        );
+            console.error("Assistant error:", error);
 
-        console.error(error);
-
-    } finally {
-        button.disabled = false;
-        button.textContent = "Send ↑";
-    }
-});
+        } finally {
+            button.disabled = false;
+            button.textContent = "Send ↑";
+        }
+    });
+}
 
 // ==================================================
 // KNOWLEDGE BASE AND RAG INGESTION
 // ==================================================
 
-$("ingestForm").addEventListener("submit", async event => {
-    event.preventDefault();
+const ingestForm = $("ingestForm");
 
-    const text = $("documentInput").value.trim();
+if (ingestForm) {
+    ingestForm.addEventListener("submit", async event => {
+        event.preventDefault();
 
-    if (!text) {
-        toast("Please enter document content.");
-        return;
-    }
+        const text = $("documentInput")?.value.trim();
+        const button = $("ingestButton");
 
-    const button = $("ingestButton");
+        if (!text) {
+            toast("Please enter document content.");
+            return;
+        }
 
-    button.disabled = true;
-    button.textContent = "Adding document...";
+        if (!button) return;
 
-    $("ingestResult").innerHTML = "";
+        button.disabled = true;
+        button.textContent = "Adding document...";
+        setHTML("ingestResult", "");
 
-    try {
-        const data = await api("/api/ai/ingest-text", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                text: text,
-                source:
-                    $("sourceInput").value.trim() ||
-                    "financial-reference",
-                vendor:
-                    $("vendorInput").value.trim() || null
-            })
-        });
+        try {
+            const data = await api("/api/ai/ingest-text", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    text,
+                    source:
+                        $("sourceInput")?.value.trim() ||
+                        "financial-reference",
+                    vendor:
+                        $("vendorInput")?.value.trim() || null
+                })
+            });
 
-        $("ingestResult").innerHTML = `
-            <div class="success-text">
-                ${escapeHTML(data.message || "Document added.")}
+            setHTML("ingestResult", `
+                <div class="success-text">
+                    ${escapeHTML(data.message || "Document added.")}
+                    <p>
+                        Chunks added:
+                        ${escapeHTML(data.chunks_added ?? "Not reported")}
+                    </p>
+                </div>
+            `);
 
-                <br>
-                Chunks added:
-                ${escapeHTML(data.chunks_added ?? "Not reported")}
-            </div>
-        `;
+            $("documentInput").value = "";
+            toast("Knowledge base updated.");
 
-        $("documentInput").value = "";
+        } catch (error) {
+            setHTML("ingestResult", `
+                <div class="error-text">
+                    ${escapeHTML(error.message)}
+                </div>
+            `);
 
-        toast("Knowledge base updated.");
+            console.error("Knowledge ingestion:", error);
 
-    } catch (error) {
-        $("ingestResult").innerHTML = `
-            <div class="error-text">
-                ${escapeHTML(error.message)}
-            </div>
-        `;
-
-        console.error(error);
-
-    } finally {
-        button.disabled = false;
-        button.textContent = "Add to knowledge base";
-    }
-});
+        } finally {
+            button.disabled = false;
+            button.textContent = "Add to knowledge base";
+        }
+    });
+}
 
 // ==================================================
 // INITIALIZE APPLICATION
 // ==================================================
 
-document.addEventListener("DOMContentLoaded", () => {
+function initializeApp() {
+    showView("overview");
     checkStatus();
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeApp);
+} else {
+    initializeApp();
+}
