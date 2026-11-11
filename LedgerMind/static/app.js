@@ -1,20 +1,314 @@
-let currentIssues=[];const fmt=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
-function toast(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3300)}
-function showTab(tab){document.querySelectorAll('.tabview').forEach(x=>x.classList.add('hidden'));document.getElementById(tab).classList.remove('hidden');document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));let titles={overview:['Overview','Your reconciliation command centre.'],exceptions:['Reconciliation','Investigate and resolve GST mismatches.'],vendors:['Vendor memory','Patterns retained across filing cycles.'],actions:['Action drafts','Review agent-prepared vendor follow-ups.']};document.getElementById('pageTitle').textContent=titles[tab][0];document.getElementById('pageSub').textContent=titles[tab][1];if(tab==='exceptions')loadIssues();if(tab==='vendors')loadVendors();if(tab==='actions')loadActions()}
-document.querySelectorAll('.nav').forEach(x=>x.addEventListener('click',()=>showTab(x.dataset.tab)));
-async function get(url){let r=await fetch(url);if(!r.ok)throw Error(await r.text());return r.json()}
-async function refresh(){try{let d=await get('/api/dashboard');document.getElementById('mInvoices').textContent=d.total_invoices.toLocaleString('en-IN');document.getElementById('mVendors').textContent=d.vendors;document.getElementById('mRisk').textContent=fmt(d.risk);document.getElementById('mIssues').textContent=d.issues;document.getElementById('mHigh').textContent=d.high_priority+' high priority';document.getElementById('navCount').textContent=d.issues;let max=Math.max(1,...d.trend.map(x=>x.risk));document.getElementById('chart').innerHTML=d.trend.map(x=>`<div class="barcol"><div class="bar" style="height:${Math.max(3,x.risk/max*125)}px" data-value="${fmt(x.risk)}"></div><small>${x.month.slice(5)}</small></div>`).join('');document.getElementById('activity').innerHTML=`<div class="event"><div class="eventicon">✓</div><div><b>Reconciliation engine ready</b><small>${d.total_invoices} purchase invoices loaded</small></div></div><div class="event"><div class="eventicon">♙</div><div><b>${d.vendors} vendor profiles remembered</b><small>Late filing and recurring exception patterns retained</small></div></div><div class="event"><div class="eventicon">₹</div><div><b>${fmt(d.risk)} estimated credit at risk</b><small>${d.issues} open exceptions identified</small></div></div>`;let issues=await get('/api/issues');document.getElementById('topIssues').innerHTML=issueTable(issues.slice(0,6));await fillMonths(d.trend)}catch(e){toast('Could not load dashboard: '+e.message)}}
-function issueTable(rows){if(!rows.length)return '<p style="padding:20px;color:#87928c">No exceptions found. Upload records or run a new filing cycle.</p>';return `<table><thead><tr><th>VENDOR / INVOICE</th><th>PERIOD</th><th>EXCEPTION</th><th>PRIORITY</th><th>CREDIT AT RISK</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.vendor)}</b><br><small>${esc(x.invoice)}</small></td><td>${x.month}</td><td>${esc(x.issue)}</td><td><span class="pill ${x.priority.toLowerCase()}">${x.priority}</span></td><td><b>${fmt(x.risk)}</b></td></tr>`).join('')}</tbody></table>`}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function fillMonths(trend){let sel=document.getElementById('monthFilter');let old=sel.value;sel.innerHTML='<option value="">All periods</option>'+trend.map(x=>`<option value="${x.month}">${x.month}</option>`).join('');sel.value=old}
-async function loadIssues(){let month=document.getElementById('monthFilter').value;currentIssues=await get('/api/issues'+(month?'?month='+month:''));document.getElementById('issueTable').innerHTML=issueTable(currentIssues)}
-async function loadVendors(){let a=await get('/api/vendors');document.getElementById('vendorTable').innerHTML=`<table><thead><tr><th>VENDOR</th><th>GSTIN</th><th>LATE FILINGS</th><th>REPEATED GSTIN TYPOS</th><th>PREFERRED CHANNEL</th><th>LAST KNOWN OUTCOME</th></tr></thead><tbody>${a.map(x=>`<tr><td><b>${esc(x.vendor)}</b><br><small>${esc(x.notes||'No unusual pattern recorded')}</small></td><td>${esc(x.gstin)}</td><td>${x.late_count} / ${x.months_seen}</td><td>${x.typo_count}</td><td>${esc(x.preferred_channel)}</td><td>${esc(x.last_outcome)}</td></tr>`).join('')}</tbody></table>`}
-async function loadActions(){let a=await get('/api/actions');document.getElementById('actionList').innerHTML=a.length?a.map(x=>`<article class="draft"><div class="drafttop"><h4>${esc(x.vendor)}</h4><span class="pill ${x.status==='Draft'?'medium':'match'}">${esc(x.status)}</span></div><p>${esc(x.issue)} · ${esc(x.channel)} · ${x.created_at}</p><pre>${esc(x.draft)}</pre><button onclick="copyDraft(${x.id})">Copy draft</button> ${x.status==='Draft'?`<button onclick="markSent(${x.id})">Mark as sent</button>`:''}</article>`).join(''):'<div class="panel">No drafts yet. Run the agent to prepare vendor-specific follow-ups.</div>'}
-async function runAgent(){try{let r=await fetch('/api/run-agent',{method:'POST'});let d=await r.json();toast(d.message);await refresh();if(!document.getElementById('actions').classList.contains('hidden'))loadActions()}catch(e){toast('Agent failed: '+e.message)}}
-async function uploadFile(kind,file){if(!file)return;let fd=new FormData();fd.append('file',file);try{let r=await fetch('/api/upload/'+kind,{method:'POST',body:fd});let d=await r.json();if(!r.ok)throw Error(d.detail||'Upload failed');toast(`${d.inserted} ${kind} rows imported`);await refresh();loadIssues()}catch(e){toast('Upload error: '+e.message)}}
-async function markSent(id){await fetch('/api/actions/'+id+'/sent',{method:'POST'});toast('Draft status updated. No message was sent.');loadActions()}
-async function copyDraft(id){let a=await get('/api/actions');let x=a.find(z=>z.id===id);if(x){await navigator.clipboard.writeText(x.draft);toast('Draft copied to clipboard')}}
-refresh();setInterval(refresh,30000);
 
-async function loadIntegrations(){try{let d=await get('/api/integrations');let items=[['Hindsight memory',d.hindsight.connected?'Connected':(d.hindsight.configured?'Configured · connection failed':'API key missing'),d.hindsight.connected],['Groq LLM',d.groq.configured?('Configured · '+d.groq.model):'API key missing · deterministic fallback active',d.groq.configured],['Band AI Desktop',d.band_ai.status,true],['OpenClaw',d.openclaw.status,true]];document.getElementById('integrationStatus').innerHTML=items.map(x=>`<div class="event"><div class="eventicon">${x[2]?'✓':'!'}</div><div><b>${esc(x[0])}</b><small>${esc(x[1])}</small></div></div>`).join('')}catch(e){document.getElementById('integrationStatus').textContent='Could not read integration status'}}
-loadIntegrations();
+const $ = (id) => document.getElementById(id);
+
+function toast(message) {
+  const element = $("toast");
+  element.textContent = message;
+  element.classList.add("show");
+  setTimeout(() => element.classList.remove("show"), 3500);
+}
+
+async function api(url, options = {}) {
+  const response = await fetch(url, options);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.detail || data.message || `Request failed (${response.status})`);
+  }
+
+  return data;
+}
+
+function showView(view) {
+  document.querySelectorAll(".view").forEach(section => {
+    section.classList.toggle("active", section.id === view);
+  });
+
+  document.querySelectorAll(".nav-item").forEach(button => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+
+  const titles = {
+    overview: ["Overview", "Your financial intelligence workspace."],
+    invoices: ["Invoice intelligence", "Extract structured information from your invoices."],
+    assistant: ["AI financial assistant", "Ask questions about your financial records."],
+    knowledge: ["Knowledge base", "Manage information available to your AI agent."],
+    memory: ["Vendor memory", "Persistent memory and integration status."]
+  };
+
+  $("pageTitle").textContent = titles[view][0];
+  $("pageDescription").textContent = titles[view][1];
+
+  if (view === "memory") checkStatus();
+}
+
+document.querySelectorAll("[data-view]").forEach(button => {
+  button.addEventListener("click", () => showView(button.dataset.view));
+});
+
+document.querySelectorAll("[data-go]").forEach(button => {
+  button.addEventListener("click", () => showView(button.dataset.go));
+});
+
+$("refreshButton").addEventListener("click", checkStatus);
+$("memoryRefresh").addEventListener("click", checkStatus);
+
+// ------------------------------------------
+// BACKEND STATUS
+// ------------------------------------------
+
+async function checkStatus() {
+  try {
+    const data = await api("/api/ai/status");
+
+    $("systemDot").className = "status-dot good";
+    $("systemLabel").textContent = "Backend connected";
+    $("connectionLabel").textContent = "Backend connected";
+
+    $("hindsightStatus").textContent =
+      data.hindsight_status || "Not reported";
+
+    $("agentStatus").textContent =
+      data.agent || "Not reported";
+
+    $("ragStatus").textContent =
+      data.rag_available ? "Available" : "Unavailable";
+
+    $("systemDot").className = "status-dot good";
+
+  } catch (error) {
+    $("systemDot").className = "status-dot bad";
+    $("systemLabel").textContent = "Backend unavailable";
+    $("connectionLabel").textContent = "Connection error";
+
+    $("hindsightStatus").textContent = "Unable to check";
+    $("agentStatus").textContent = "Unable to check";
+    $("ragStatus").textContent = "Unable to check";
+
+    toast("Backend status error: " + error.message);
+  }
+}
+
+// ------------------------------------------
+// INVOICE EXTRACTION
+// ------------------------------------------
+
+$("invoiceFile").addEventListener("change", event => {
+  const file = event.target.files[0];
+  $("fileName").textContent = file
+    ? `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
+    : "Click here to select a PDF or image";
+});
+
+$("extractButton").addEventListener("click", async () => {
+  const file = $("invoiceFile").files[0];
+
+  if (!file) {
+    toast("Please select an invoice first.");
+    return;
+  }
+
+  const allowed = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
+
+  if (!allowed.includes(file.type)) {
+    toast("Please upload a PDF, JPG, PNG or WEBP file.");
+    return;
+  }
+
+  if (file.size > 15 * 1024 * 1024) {
+    toast("Maximum invoice size is 15 MB.");
+    return;
+  }
+
+  const button = $("extractButton");
+  button.disabled = true;
+  $("invoiceLoading").classList.remove("hidden");
+  $("invoiceResult").innerHTML = "";
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const data = await api("/api/ai/extract-invoice", {
+      method: "POST",
+      body: formData
+    });
+
+    const invoice = data.invoice || {};
+
+    $("invoiceResult").innerHTML = `
+      <div class="result-card">
+        <div class="success-text">${escapeHTML(data.message || "Invoice processed successfully.")}</div>
+        <h3 style="margin-top:16px">Extracted invoice information</h3>
+        <div class="result-grid">
+          ${Object.entries(invoice).map(([key, value]) => `
+            <div class="result-field">
+              <small>${escapeHTML(key.replaceAll("_", " "))}</small>
+              <strong>${escapeHTML(displayValue(value))}</strong>
+            </div>
+          `).join("")}
+        </div>
+        <p class="form-note">Document ID: ${escapeHTML(data.document_id || "Not provided")}</p>
+        <p class="form-note">RAG chunks added: ${escapeHTML(data.rag_chunks_added ?? 0)}</p>
+      </div>
+    `;
+
+    toast("Invoice extraction completed.");
+
+  } catch (error) {
+    $("invoiceResult").innerHTML =
+      `<div class="error-text">${escapeHTML(error.message)}</div>`;
+    toast("Invoice extraction failed.");
+
+  } finally {
+    button.disabled = false;
+    $("invoiceLoading").classList.add("hidden");
+  }
+});
+
+// ------------------------------------------
+// AI FINANCIAL ASSISTANT
+// ------------------------------------------
+
+function addMessage(message, type) {
+  const element = document.createElement("div");
+  element.className = `chat-message ${type}`;
+  element.textContent = message;
+
+  $("chatOutput").appendChild(element);
+  $("chatOutput").scrollTop = $("chatOutput").scrollHeight;
+}
+
+$("suggestions").querySelectorAll(".suggestion").forEach(button => {
+  button.addEventListener("click", () => {
+    $("questionInput").value = button.textContent.trim();
+    $("questionInput").focus();
+  });
+});
+
+$("askForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const question = $("questionInput").value.trim();
+  if (!question) return;
+
+  addMessage(question, "user");
+  $("questionInput").value = "";
+
+  const button = $("askButton");
+  button.disabled = true;
+  button.textContent = "Thinking…";
+
+  try {
+    const data = await api("/api/ai/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: question,
+        top_k: 5
+      })
+    });
+
+    const answer =
+      typeof data === "string"
+        ? data
+        : data.answer || data.response || data.message ||
+          JSON.stringify(data, null, 2);
+
+    addMessage(answer, "bot");
+
+  } catch (error) {
+    addMessage("I couldn't process that question: " + error.message, "bot");
+
+  } finally {
+    button.disabled = false;
+    button.textContent = "Send ↑";
+  }
+});
+
+// ------------------------------------------
+// KNOWLEDGE BASE / RAG INGESTION
+// ------------------------------------------
+
+$("ingestForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const text = $("documentInput").value.trim();
+
+  if (!text) {
+    toast("Please enter document content.");
+    return;
+  }
+
+  const button = $("ingestButton");
+  button.disabled = true;
+  button.textContent = "Adding document…";
+  $("ingestResult").innerHTML = "";
+
+  try {
+    const data = await api("/api/ai/ingest-text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: text,
+        source: $("sourceInput").value.trim() || "financial-reference",
+        vendor: $("vendorInput").value.trim() || null
+      })
+    });
+
+    $("ingestResult").innerHTML = `
+      <div class="success-text">
+        ${escapeHTML(data.message || "Document added successfully.")}
+        <br>Chunks added: ${escapeHTML(data.chunks_added ?? 0)}
+      </div>
+    `;
+
+    $("documentInput").value = "";
+    toast("Information added to knowledge base.");
+
+  } catch (error) {
+    $("ingestResult").innerHTML =
+      `<div class="error-text">${escapeHTML(error.message)}</div>`;
+
+  } finally {
+    button.disabled = false;
+    button.textContent = "Add to knowledge base";
+  }
+});
+
+// ------------------------------------------
+// HELPERS
+// ------------------------------------------
+
+function displayValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "Not available";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+// ------------------------------------------
+// INITIALIZE
+// ------------------------------------------
+
+checkStatus();
