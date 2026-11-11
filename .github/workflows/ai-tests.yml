@@ -40,5 +40,6 @@ jobs:
         env:
           PYTHONPATH: .
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-3.5-flash-lite
         run: |
           python -c "from ai_agent.gemini_client import generate_text; result = generate_text('Reply with exactly GEMINI_OK', max_output_tokens=20); print(result); assert 'GEMINI_OK' in result"
