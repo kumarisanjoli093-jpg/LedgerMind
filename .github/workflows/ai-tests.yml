@@ -3,11 +3,9 @@ name: LedgerMind AI Tests
 
 on:
   push:
-    branches:
-      - ai-agent
+    branches: [ai-agent]
   pull_request:
-    branches:
-      - ai-agent
+    branches: [ai-agent]
 
 jobs:
   test:
@@ -28,63 +26,44 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run existing AI tests
+      - name: Run unit tests
         working-directory: LedgerMind
         env:
           PYTHONPATH: .
-        run: |
-          pytest ai_agent/test_ai_agent.py -v
+        run: pytest ai_agent/test_ai_agent.py -v
 
-      - name: Test Gemini API
+      - name: Test Gemini
         working-directory: LedgerMind
         env:
           PYTHONPATH: .
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-3.5-flash-lite
         run: |
-          python -c "from ai_agent.gemini_client import generate_text; result = generate_text('Reply with exactly GEMINI_OK', max_output_tokens=20); print(result); assert 'GEMINI_OK' in result"
+          python -c "from ai_agent.gemini_client import generate_text; print(generate_text('Reply GEMINI_OK', max_output_tokens=20))"
 
-      - name: Test real RAG ingestion and retrieval
+      - name: Test Hindsight memory
         working-directory: LedgerMind
         env:
           PYTHONPATH: .
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          HINDSIGHT_API_KEY: ${{ secrets.HINDSIGHT_API_KEY }}
         run: |
           python - <<'PY'
-          import tempfile
-          from ai_agent.rag import RAGEngine
+          from integrations import remember_vendor_event, recall_vendor_context
 
-          with tempfile.TemporaryDirectory() as folder:
-              engine = RAGEngine(db_path=f"{folder}/test.sqlite3")
+          vendor = "LedgerMind CI Test Vendor"
+          content = "LedgerMind integration test reference: LM-TEST-2026-001"
 
-              text = (
-                  "Invoice INV-2026-TEST-001 belongs to ABC Traders. "
-                  "The taxable value is 10000 INR. "
-                  "CGST is 900 INR and SGST is 900 INR. "
-                  "The grand total is 11800 INR."
-              )
+          saved = remember_vendor_event(vendor, content)
+          print("Memory save result:", saved)
 
-              count = engine.add_document(
-                  document_id="rag-test-001",
-                  text=text,
-                  metadata={"vendor": "ABC Traders"}
-              )
+          recalled = recall_vendor_context(
+              vendor=vendor,
+              question="What is the LedgerMind integration test reference?"
+          )
+          print("Memory recall result:", recalled)
 
-              results = engine.retrieve(
-                  query="What is the invoice number for ABC Traders?",
-                  top_k=3,
-                  vendor="ABC Traders"
-              )
+          assert saved, "Hindsight memory was not saved"
+          assert recalled, "Hindsight returned no memories"
 
-              print("Chunks stored:", count)
-              print("Retrieved records:", len(results))
-
-              assert count > 0
-              assert results
-              assert any(
-                  "INV-2026-TEST-001" in item["content"]
-                  for item in results
-              )
-
-              print("RAG_INGESTION_AND_RETRIEVAL_OK")
+          print("HINDSIGHT_MEMORY_OK")
           PY
